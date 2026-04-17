@@ -136,11 +136,12 @@ export default function RunningTestScreen({ navigation, route }: Props) {
   };
 
   const runTests = useCallback(async () => {
+    if (running) return;
     setRunning(true);
     startPulse();
-    const allResults: TestResult[] = [];
+    const allResults: TestResult[] = [...results];
 
-    for (let i = 0; i < tests.length; i++) {
+    for (let i = results.length; i < tests.length; i++) {
       const test = tests[i];
       setCurrentIndex(i);
 
@@ -148,7 +149,16 @@ export default function RunningTestScreen({ navigation, route }: Props) {
       let status: TestStatus = 'pass';
       let value = '';
 
-      if (test.isManual) {
+      if (test.category === 'Display' || test.category === 'Touch') {
+        const passed = await new Promise<boolean>((resolve) => {
+          manualResolveRef.current = resolve;
+          const screenName = test.category === 'Display' ? 'DisplayTest' : 'TouchTest';
+          navigation.navigate(screenName, { testId: test.id });
+        });
+        status = passed ? 'pass' : 'fail';
+        value = passed ? 'Visual check passed' : 'Issue detected';
+        manualResolveRef.current = null;
+      } else if (test.isManual) {
         const passed = await askManual(test);
         status = passed ? 'pass' : 'fail';
         value = passed ? 'User confirmed' : 'User reported issue';
@@ -189,6 +199,14 @@ export default function RunningTestScreen({ navigation, route }: Props) {
     const timer = setTimeout(runTests, 500);
     return () => clearTimeout(timer);
   }, [runTests]);
+
+  useEffect(() => {
+    if (route.params?.testResult) {
+      const { pass } = route.params.testResult;
+      manualResolveRef.current?.(pass);
+      navigation.setParams({ testResult: undefined } as any);
+    }
+  }, [route.params?.testResult, navigation]);
 
   const progress = tests.length > 0 ? (results.length / tests.length) * 100 : 0;
   const currentTest = tests[currentIndex];

@@ -22,6 +22,8 @@ import ProgressBar from '../components/ProgressBar';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const QUICK_TESTS = [
+  { icon: '📱', label: 'Display', category: 'Display' },
+  { icon: '👆', label: 'Touch', category: 'Touch' },
   { icon: '🔋', label: 'Battery', category: 'Battery' },
   { icon: '📡', label: 'Network', category: 'Connectivity' },
   { icon: '🧭', label: 'Sensors', category: 'Sensors' },
