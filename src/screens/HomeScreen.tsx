@@ -174,30 +174,42 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Quick Tests */}
-        <SectionHeader title="Quick Tests" actionLabel="All Tests" onAction={() => navigation.navigate('Main')} />
-        <View style={styles.quickGrid}>
-          {QUICK_TESTS.map(qt => (
-            <TouchableOpacity
-              key={qt.category}
-              style={styles.quickBtn}
-              onPress={() => navigation.navigate('RunningTest', { selectedCategories: [qt.category as any] })}
-            >
-              <Text style={styles.quickBtnIcon}>{qt.icon}</Text>
-              <Text style={styles.quickBtnLabel}>{qt.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Diagnostic Suite */}
+        <View style={styles.diagnosticContainer}>
+          <SectionHeader title="Quick Diagnostics" actionLabel="All Tests" onAction={() => navigation.navigate('Tests')} />
+          <View style={styles.quickTestBox}>
+            <View style={styles.quickGrid}>
+              {QUICK_TESTS.map(qt => (
+                <TouchableOpacity
+                  key={qt.category}
+                  style={styles.quickBtn}
+                  onPress={() => navigation.navigate('RunningTest', { selectedCategories: [qt.category as any] })}
+                >
+                  <Text style={styles.quickBtnIcon}>{qt.icon}</Text>
+                  <Text style={styles.quickBtnLabel}>{qt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-        {/* CTA */}
-        <TouchableOpacity
-          style={styles.fullTestBtn}
-          onPress={() => navigation.navigate('RunningTest', { selectedCategories: 'all' })}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.fullTestBtnText}>🚀  Start Full Diagnostic</Text>
-          <Text style={styles.fullTestBtnSub}>28 tests across 8 categories</Text>
-        </TouchableOpacity>
+          <View style={styles.fullTestBox}>
+            <TouchableOpacity
+              style={styles.fullTestBtnInternal}
+              onPress={() => navigation.navigate('InteractiveDiagnostic', { selectedCategories: 'all' })}
+              activeOpacity={0.85}
+            >
+              <View style={styles.fullTestContent}>
+                <View style={styles.fullTestText}>
+                  <Text style={styles.fullTestTitle}>Full System Diagnostic</Text>
+                  <Text style={styles.fullTestSub}>Scan all 28 modules for 100% health verification</Text>
+                </View>
+                <View style={styles.fullTestIconBox}>
+                  <Text style={styles.fullTestPlay}>▶</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
@@ -372,12 +384,26 @@ const styles = StyleSheet.create({
     width: 36,
     textAlign: 'right',
   },
+  diagnosticContainer: {
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  quickTestBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
   quickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: spacing.lg,
   },
   quickBtn: {
     width: '30.5%',
@@ -389,8 +415,8 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 4,
   },
   quickBtnIcon: { 
@@ -403,26 +429,56 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
   },
-  fullTestBtn: {
+  fullTestBox: {
     backgroundColor: colors.primary,
     borderRadius: radius.lg,
-    padding: spacing.lg,
-    alignItems: 'center',
-    marginTop: 4,
+    overflow: 'hidden',
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 15,
+    elevation: 8,
+    marginTop: spacing.xs,
   },
-  fullTestBtnText: {
+  fullTestBtnInternal: {
+    padding: spacing.lg,
+  },
+  fullTestContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  fullTestText: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  fullTestTitle: {
     fontSize: fontSize.lg,
     fontWeight: '800',
     color: colors.background,
     letterSpacing: 0.5,
   },
-  fullTestBtnSub: {
+  fullTestSub: {
     fontSize: fontSize.xs,
     color: colors.background + 'AA',
     marginTop: 4,
+    fontWeight: '500',
+  },
+  fullTestIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  fullTestPlay: {
+    fontSize: 20,
+    color: colors.primary,
+    marginLeft: 3, // Offset for visual center
   },
 });

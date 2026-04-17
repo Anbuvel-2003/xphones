@@ -21,6 +21,7 @@ import NetworkTestScreen from '../screens/tests/NetworkTestScreen';
 import BatteryTestScreen from '../screens/tests/BatteryTestScreen';
 import CameraTestScreen from '../screens/tests/CameraTestScreen';
 import ManualTestScreen from '../screens/tests/ManualTestScreen';
+import InteractiveDiagnosticScreen from '../screens/InteractiveDiagnosticScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -111,6 +112,7 @@ export default function AppNavigator() {
       <Stack.Screen name="BatteryTest" component={BatteryTestScreen} />
       <Stack.Screen name="CameraTest" component={CameraTestScreen} />
       <Stack.Screen name="ManualTest" component={ManualTestScreen} />
+      <Stack.Screen name="InteractiveDiagnostic" component={InteractiveDiagnosticScreen} />
     </Stack.Navigator>
   );
 }

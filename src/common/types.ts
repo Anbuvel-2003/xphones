@@ -96,6 +96,7 @@ export type RootStackParamList = {
   BatteryTest: { testId: string };
   CameraTest: { testId: string };
   ManualTest: { testId: string; testName: string; instruction: string };
+  InteractiveDiagnostic: { selectedCategories?: TestCategory[] | 'all' };
 };
 
 export type TabParamList = {
