@@ -69,6 +69,11 @@ export default function ReportScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      
+      {/* Background Blobs */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
+
       <View style={styles.header}>
         <Text style={styles.title}>📊  Reports</Text>
         {reports.length > 0 && (
@@ -118,6 +123,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
+  blob1: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: colors.success + '08',
+    top: '5%',
+    right: -80,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: colors.primary + '10',
+    bottom: '15%',
+    left: -100,
+  },
   title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text },
   exportAll: { fontSize: fontSize.sm, color: colors.primary, fontWeight: '600' },
   scroll: { padding: spacing.md },
@@ -125,10 +148,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.md,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
     gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 4,
   },
   reportTop: {
     flexDirection: 'row',
@@ -149,12 +177,12 @@ const styles = StyleSheet.create({
   reportStats: { flexDirection: 'row', gap: 12 },
   reportStat: { fontSize: fontSize.sm, color: colors.textSecondary, fontWeight: '500' },
   shareBtn: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: radius.sm,
     padding: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   shareBtnText: { fontSize: fontSize.sm, color: colors.primary, fontWeight: '600' },
   empty: {
@@ -176,6 +204,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 14,
     marginTop: 8,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
   },
   runTestBtnText: { fontSize: fontSize.md, fontWeight: '700', color: colors.background },
 });

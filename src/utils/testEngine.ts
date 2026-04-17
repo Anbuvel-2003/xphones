@@ -348,12 +348,72 @@ export const ALL_TESTS: TestItem[] = [
   },
 ];
 
+// Biometric test (added for launch flow)
+const BIOMETRIC_TEST: TestItem = {
+  id: 'biometric',
+  name: 'Biometric Security',
+  description: 'Test fingerprint / face unlock. Place finger on sensor or look at camera.',
+  category: 'Hardware',
+  icon: '🔐',
+  isManual: true,
+  isAuto: false,
+  status: 'pending',
+};
+
+// Ordered sequence used on every app launch
+const LAUNCH_SEQUENCE_IDS: string[] = [
+  // Display — each sub-test is its own step before moving to touch
+  'display_colors',
+  'dead_pixels',
+  'display_brightness',
+  'display_patterns',
+  'display_smoothness',
+  'display_burnin',
+  // Touch
+  'touch_screen',     // Touch grid
+  'pressure_test',    // Pressure sensitivity
+  'gesture_test',     // Swipe / pinch / zoom
+  'biometric',        // Fingerprint / face
+  'rear_camera',      // Rear camera capture
+  'front_camera',     // Front camera capture
+  'volume_up',        // Volume up button
+  'volume_down',      // Volume down button
+  'wifi',             // WiFi
+  'bluetooth',        // Bluetooth / BLE
+  'gps',              // GPS / Location
+  'accelerometer',    // Motion sensor
+  'gyroscope',        // Rotation sensor
+  'magnetometer',     // Compass sensor
+  'proximity',        // Proximity sensor
+  'light_sensor',     // Ambient light sensor
+  'battery_level',    // Battery health
+  'battery_temp',     // Battery temperature
+  'charging',         // Charging port
+  'multi_touch',
+  'speaker',
+  'microphone',
+  'earpiece',
+  'flash',
+  'vibration',
+  'storage_check',
+  'ram_check',
+  'cellular',
+];
+
+export function getLaunchSequenceTests(): TestItem[] {
+  const pool = [...ALL_TESTS, BIOMETRIC_TEST];
+  return LAUNCH_SEQUENCE_IDS
+    .map(id => pool.find(t => t.id === id))
+    .filter((t): t is TestItem => Boolean(t));
+}
+
 export function getTestsByCategory(category: TestCategory): TestItem[] {
   return ALL_TESTS.filter(t => t.category === category);
 }
 
 export function getTestsForCategories(categories: TestCategory[] | 'all'): TestItem[] {
-  if (categories === 'all') return [...ALL_TESTS];
+  if (categories === 'all') return getLaunchSequenceTests();
+  if (!categories || !Array.isArray(categories)) return [];
   return ALL_TESTS.filter(t => categories.includes(t.category));
 }
 

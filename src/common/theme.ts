@@ -3,9 +3,12 @@ export const colors = {
   primaryDark: '#0099BB',
   primaryLight: '#66E5FF',
   background: '#0A0E1A',
-  surface: '#141824',
-  card: '#1E2435',
-  cardBorder: '#2A3349',
+  surface: 'rgba(20, 24, 36, 0.8)',
+  card: 'rgba(30, 36, 53, 0.7)',
+  cardBorder: 'rgba(255, 255, 255, 0.08)',
+  glass: 'rgba(255, 255, 255, 0.05)',
+  glassHover: 'rgba(255, 255, 255, 0.1)',
+  glassBorder: 'rgba(255, 255, 255, 0.15)',
   success: '#00E676',
   successBg: 'rgba(0,230,118,0.12)',
   error: '#FF4444',
@@ -18,6 +21,7 @@ export const colors = {
   textSecondary: '#8899AA',
   textMuted: '#556677',
   overlay: 'rgba(0,0,0,0.6)',
+  accent: '#00D4FF',
 };
 
 export const spacing = {

@@ -83,8 +83,8 @@ export interface DeviceSpecs {
 export type RootStackParamList = {
   Splash: undefined;
   Main: undefined;
-  RunningTest: { 
-    selectedCategories: TestCategory[] | 'all';
+  RunningTest: {
+    selectedCategories?: TestCategory[] | 'all';
     testResult?: { testId: string; pass: boolean; value?: string };
   };
   TestResult: { results: TestResult[] };

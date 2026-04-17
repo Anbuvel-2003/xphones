@@ -1,25 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  Dimensions,
   Animated,
   Vibration,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-// import Canvas from 'react-native-canvas'; 
-import { colors, fontSize, radius, spacing } from '../../common/theme';
+import { colors, fontSize, radius } from '../../common/theme';
 import { RootStackParamList } from '../../common/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DisplayTest'>;
 
-const { width, height } = Dimensions.get('window');
-
-type Phase = 'START' | 'COLORS' | 'DEAD_PIXELS' | 'BRIGHTNESS' | 'PATTERNS' | 'SMOOTHNESS' | 'BURN_IN' | 'DONE';
+type Phase = 'COLORS' | 'DEAD_PIXELS' | 'BRIGHTNESS' | 'PATTERNS' | 'SMOOTHNESS' | 'BURN_IN';
 
 const COLOR_CYCLE = [
   { color: '#FF0000', label: 'RED' },
@@ -29,129 +24,166 @@ const COLOR_CYCLE = [
   { color: '#000000', label: 'BLACK' },
 ];
 
+// Map each testId to exactly one phase
+const TEST_ID_TO_PHASE: Record<string, Phase> = {
+  display_colors:     'COLORS',
+  dead_pixels:        'DEAD_PIXELS',
+  display_brightness: 'BRIGHTNESS',
+  display_patterns:   'PATTERNS',
+  display_smoothness: 'SMOOTHNESS',
+  display_burnin:     'BURN_IN',
+};
+
 export default function DisplayTestScreen({ navigation, route }: Props) {
-  const insets = useSafeAreaInsets();
-  const [phase, setPhase] = useState<Phase>('START');
-  const [colorIndex, setColorIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(3);
-  
-  // Smoothness animation refs
-  const moveAnim = useRef(new Animated.Value(0)).current;
+  const { testId } = route.params;
+  const phase: Phase = TEST_ID_TO_PHASE[testId] ?? 'COLORS';
+
+  // COLORS state
+  const [colorIndex, setColorIndex]   = useState(0);
+  const [timeLeft, setTimeLeft]       = useState(5);
+  const [colorsDone, setColorsDone]   = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const startNextPhase = useCallback((next: Phase) => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setPhase(next);
-    
-    if (next === 'COLORS') {
-      setColorIndex(0);
-      setTimeLeft(3);
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            // Next color or next phase
-            setColorIndex(curr => {
-              if (curr >= COLOR_CYCLE.length - 1) {
-                startNextPhase('DEAD_PIXELS');
-                return curr;
-              }
-              setTimeLeft(3);
-              return curr + 1;
-            });
-            return 3;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (next === 'SMOOTHNESS') {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(moveAnim, { toValue: width - 80, duration: 1000, useNativeDriver: true }),
-          Animated.timing(moveAnim, { toValue: 0, duration: 1000, useNativeDriver: true }),
-        ])
-      ).start();
-    }
-  }, [moveAnim]);
+  // SMOOTHNESS animation
+  const moveAnim = useRef(new Animated.Value(0)).current;
 
+  // BURN_IN overlay
+  const burnInOpacity = useRef(new Animated.Value(1)).current;
+  const [showBurnInUI, setShowBurnInUI] = useState(true);
+
+  // Start COLORS 5-second-per-color timer
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
+    if (phase !== 'COLORS') return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          setColorIndex(curr => {
+            if (curr >= COLOR_CYCLE.length - 1) {
+              clearInterval(timerRef.current!);
+              setColorsDone(true);
+              return curr;
+            }
+            return curr + 1;
+          });
+          return 5;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [phase]);
+
+  // Start SMOOTHNESS ball animation
+  useEffect(() => {
+    if (phase !== 'SMOOTHNESS') return;
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(moveAnim, { toValue: 150, duration: 800, useNativeDriver: true }),
+        Animated.timing(moveAnim, { toValue: -150, duration: 800, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [phase]);
 
   const finishTest = (pass: boolean) => {
     Vibration.vibrate(50);
-    navigation.navigate('RunningTest', { 
-      testResult: { testId: route.params.testId, pass } 
+    navigation.navigate('RunningTest', {
+      testResult: { testId, pass },
     });
   };
 
-  // ── PHASE RENDERING ──
-
+  // ─── COLORS ───────────────────────────────────────────────
   if (phase === 'COLORS') {
     const current = COLOR_CYCLE[colorIndex];
+    const textColor = current.color === '#FFFFFF' || current.color === '#00FF00' ? '#000' : '#FFF';
+
+    if (colorsDone) {
+      return (
+        <View style={[styles.fullScreen, { backgroundColor: current.color }]}>
+          <StatusBar hidden />
+          <View style={styles.resultOverlay}>
+            <Text style={[styles.overlayTitle, { color: '#FFF' }]}>Color Test Done</Text>
+            <Text style={[styles.overlaySub, { color: '#DDD' }]}>Did all 5 colors display correctly with no tint or bleed?</Text>
+            <View style={styles.btnRow}>
+              <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.error }]} onPress={() => finishTest(false)}>
+                <Text style={styles.resBtnText}>❌  FAIL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.success }]} onPress={() => finishTest(true)}>
+                <Text style={styles.resBtnText}>✅  PASS</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[styles.fullScreen, { backgroundColor: current.color }]}>
         <StatusBar hidden />
-        <Text style={[styles.phaseTitle, { color: current.color === '#FFFFFF' ? '#000' : '#FFF' }]}>
-          {current.label}
+        <Text style={[styles.phaseTitle, { color: textColor }]}>{current.label}</Text>
+        <Text style={[styles.timerText, { color: textColor }]}>
+          {timeLeft}s  ({colorIndex + 1}/{COLOR_CYCLE.length})
         </Text>
-        <Text style={[styles.timerText, { color: current.color === '#FFFFFF' ? '#000' : '#FFF' }]}>
-          Auto-switching in {timeLeft}s...
-        </Text>
-        <TouchableOpacity style={styles.skipBtn} onPress={() => startNextPhase('DEAD_PIXELS')}>
-          <Text style={styles.skipBtnText}>Skip Colors</Text>
+        <TouchableOpacity style={styles.skipBtn} onPress={() => {
+          clearInterval(timerRef.current!);
+          setColorsDone(true);
+        }}>
+          <Text style={styles.skipBtnText}>Skip</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  // ─── DEAD PIXELS ──────────────────────────────────────────
   if (phase === 'DEAD_PIXELS') {
     return (
-      <TouchableOpacity 
-        style={[styles.fullScreen, { backgroundColor: '#FFFFFF' }]} 
-        onPress={() => startNextPhase('BRIGHTNESS')}
-        activeOpacity={1}
-      >
+      <View style={[styles.fullScreen, { backgroundColor: '#FFFFFF' }]}>
         <StatusBar hidden />
-        <View style={styles.instructionOverlay}>
-          <Text style={styles.instructionText}>DEAD PIXELS TEST</Text>
-          <Text style={styles.instructionSub}>Look for any black or colored dots on this white screen.</Text>
-          <Text style={styles.tapToContinue}>Tap to continue</Text>
+        <View style={styles.resultOverlay}>
+          <Text style={styles.overlayTitle}>DEAD PIXELS</Text>
+          <Text style={styles.overlaySub}>Look across the entire white screen for any black, colored, or stuck dots.</Text>
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.error }]} onPress={() => finishTest(false)}>
+              <Text style={styles.resBtnText}>❌  FAIL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.success }]} onPress={() => finishTest(true)}>
+              <Text style={styles.resBtnText}>✅  PASS</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   }
 
+  // ─── BRIGHTNESS ───────────────────────────────────────────
   if (phase === 'BRIGHTNESS') {
     return (
-      <TouchableOpacity 
-        style={styles.fullScreen} 
-        onPress={() => startNextPhase('PATTERNS')}
-        activeOpacity={1}
-      >
+      <View style={styles.fullScreen}>
         <StatusBar hidden />
         <View style={styles.gradientContainer}>
           {Array.from({ length: 10 }).map((_, i) => (
             <View key={i} style={{ flex: 1, backgroundColor: `rgba(255,255,255,${(i + 1) / 10})` }} />
           ))}
         </View>
-        <View style={styles.instructionOverlay}>
-          <Text style={styles.instructionText}>BRIGHTNESS GRADIENT</Text>
-          <Text style={styles.instructionSub}>Check if the screen lighting is uniform across all gradients.</Text>
-          <Text style={styles.tapToContinue}>Tap to continue</Text>
+        <View style={styles.resultOverlay}>
+          <Text style={styles.overlayTitle}>BRIGHTNESS GRADIENT</Text>
+          <Text style={styles.overlaySub}>Is the screen lighting uniform across all gradient bands?</Text>
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.error }]} onPress={() => finishTest(false)}>
+              <Text style={styles.resBtnText}>❌  FAIL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.success }]} onPress={() => finishTest(true)}>
+              <Text style={styles.resBtnText}>✅  PASS</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   }
 
+  // ─── PATTERNS ─────────────────────────────────────────────
   if (phase === 'PATTERNS') {
     return (
-      <TouchableOpacity 
-        style={styles.fullScreen} 
-        onPress={() => startNextPhase('SMOOTHNESS')}
-        activeOpacity={1}
-      >
+      <View style={styles.fullScreen}>
         <StatusBar hidden />
         <View style={styles.checkerboard}>
           {Array.from({ length: 12 }).map((_, r) => (
@@ -162,140 +194,105 @@ export default function DisplayTestScreen({ navigation, route }: Props) {
             </View>
           ))}
         </View>
-        <View style={styles.instructionOverlay}>
-          <Text style={styles.instructionText}>PATTERN TEST</Text>
-          <Text style={styles.instructionSub}>Check for geometric distortion or alignment issues.</Text>
-          <Text style={styles.tapToContinue}>Tap to continue</Text>
+        <View style={styles.resultOverlay}>
+          <Text style={styles.overlayTitle}>PATTERN TEST</Text>
+          <Text style={styles.overlaySub}>Are the lines straight with no geometric distortion or wavy edges?</Text>
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.error }]} onPress={() => finishTest(false)}>
+              <Text style={styles.resBtnText}>❌  FAIL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.success }]} onPress={() => finishTest(true)}>
+              <Text style={styles.resBtnText}>✅  PASS</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   }
 
+  // ─── SMOOTHNESS ───────────────────────────────────────────
   if (phase === 'SMOOTHNESS') {
     return (
-      <TouchableOpacity 
-        style={[styles.fullScreen, { backgroundColor: '#000' }]}
-        onPress={() => startNextPhase('BURN_IN')}
-        activeOpacity={1}
-      >
+      <View style={[styles.fullScreen, { backgroundColor: '#000' }]}>
         <StatusBar hidden />
         <Animated.View style={[styles.movingBall, { transform: [{ translateX: moveAnim }] }]} />
-        <View style={styles.instructionOverlay}>
-          <Text style={[styles.instructionText, { color: '#FFF' }]}>SMOOTHNESS TEST</Text>
-          <Text style={[styles.instructionSub, { color: '#AAA' }]}>Observe the ball movement. It should be perfectly smooth without jitter.</Text>
-          <Text style={styles.tapToContinue}>Tap to continue</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  if (phase === 'BURN_IN') {
-    return (
-      <View style={[styles.fullScreen, { backgroundColor: '#333' }]}>
-        <StatusBar hidden />
-        <View style={styles.instructionOverlay}>
-          <Text style={[styles.instructionText, { color: '#FFF' }]}>AMOLED BURN-IN TEST</Text>
-          <Text style={[styles.instructionSub, { color: '#AAA' }]}>Scan the gray background for "ghost" images of previous apps or icons.</Text>
-        </View>
-        <View style={styles.btnRow}>
-          <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.error }]} onPress={() => finishTest(false)}>
-            <Text style={styles.resBtnText}>FAIL</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.success }]} onPress={() => finishTest(true)}>
-            <Text style={styles.resBtnText}>PASS</Text>
-          </TouchableOpacity>
+        <View style={styles.resultOverlay}>
+          <Text style={[styles.overlayTitle, { color: '#FFF' }]}>REFRESH RATE</Text>
+          <Text style={[styles.overlaySub, { color: '#AAA' }]}>Is the ball movement perfectly smooth with no stuttering or tearing?</Text>
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.error }]} onPress={() => finishTest(false)}>
+              <Text style={styles.resBtnText}>❌  FAIL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.resBtn, { backgroundColor: colors.success }]} onPress={() => finishTest(true)}>
+              <Text style={styles.resBtnText}>✅  PASS</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
   }
 
-  // START SCREEN
+  // ─── BURN_IN (default) ────────────────────────────────────
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Display Diagnostic</Text>
-        <View style={{ width: 60 }} />
-      </View>
-
-      <View style={styles.body}>
-        <Text style={styles.mainTitle}>Full LCD/OLED Coverage</Text>
-        <Text style={styles.mainDesc}>
-          This test will perform a complete diagnostic of your display panel across 6 professional checks.
+    <TouchableOpacity
+      style={[styles.fullScreen, { backgroundColor: '#333' }]}
+      activeOpacity={1}
+      onPress={() => {
+        const target = showBurnInUI ? 0 : 1;
+        setShowBurnInUI(!showBurnInUI);
+        Animated.timing(burnInOpacity, { toValue: target, duration: 300, useNativeDriver: true }).start();
+      }}
+    >
+      <StatusBar hidden />
+      <Animated.View style={[styles.resultOverlay, { opacity: burnInOpacity }]}>
+        <Text style={[styles.overlayTitle, { color: '#FFF' }]}>AMOLED BURN-IN</Text>
+        <Text style={[styles.overlaySub, { color: '#AAA' }]}>
+          Scan the gray background for "ghost" images or faded outlines. Tap screen to toggle this overlay.
         </Text>
-
-        <View style={styles.featureList}>
-          {['Color Cycle (Auto)', 'Dead Pixels', 'Brightness Gradients', 'Pattern Distortions', 'Motion Smoothness', 'AMOLED Burn-in'].map(f => (
-            <View key={f} style={styles.featureItem}>
-              <Text style={styles.featureIcon}>✔️</Text>
-              <Text style={styles.featureText}>{f}</Text>
-            </View>
-          ))}
+        <View style={styles.btnRow}>
+          <TouchableOpacity
+            style={[styles.resBtn, { backgroundColor: colors.error }]}
+            onPress={e => { e.stopPropagation(); finishTest(false); }}
+            disabled={!showBurnInUI}
+          >
+            <Text style={styles.resBtnText}>❌  FAIL</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.resBtn, { backgroundColor: colors.success }]}
+            onPress={e => { e.stopPropagation(); finishTest(true); }}
+            disabled={!showBurnInUI}
+          >
+            <Text style={styles.resBtnText}>✅  PASS</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.startBtn} onPress={() => startNextPhase('COLORS')}>
-          <Text style={styles.startBtnText}>START COMPREHENSIVE TEST</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
-  },
-  back: { fontSize: fontSize.md, color: colors.primary, fontWeight: '600', width: 60 },
-  title: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text },
-  body: { flex: 1, padding: spacing.xl, alignItems: 'center', justifyContent: 'center' },
-  mainTitle: { fontSize: 28, fontWeight: '800', color: colors.text, textAlign: 'center' },
-  mainDesc: { fontSize: 16, color: colors.textSecondary, textAlign: 'center', marginTop: 12, marginBottom: 32 },
-  featureList: { alignSelf: 'stretch', marginBottom: 40, gap: 12 },
-  featureItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  featureIcon: { color: colors.primary },
-  featureText: { color: colors.textSecondary, fontSize: 15 },
-  startBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    alignItems: 'center',
-    width: '100%',
-  },
-  startBtnText: { fontSize: fontSize.md, fontWeight: '800', color: colors.background, letterSpacing: 1 },
-
-  // Phase Styles
   fullScreen: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  phaseTitle: { fontSize: 42, fontWeight: '900', letterSpacing: 4 },
-  timerText: { fontSize: 18, marginTop: 24, fontWeight: '600' },
-  skipBtn: { position: 'absolute', bottom: 60, padding: 12 },
-  skipBtnText: { color: '#888', textDecorationLine: 'underline' },
-  instructionOverlay: {
+  phaseTitle: { fontSize: 48, fontWeight: '900', letterSpacing: 4 },
+  timerText:  { fontSize: 20, marginTop: 20, fontWeight: '600' },
+  skipBtn:    { position: 'absolute', bottom: 60, padding: 14 },
+  skipBtnText: { color: '#888', textDecorationLine: 'underline', fontSize: fontSize.sm },
+  gradientContainer: { flex: 1, alignSelf: 'stretch', flexDirection: 'column' },
+  checkerboard:      { flex: 1, alignSelf: 'stretch' },
+  movingBall: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primary },
+  resultOverlay: {
     position: 'absolute',
-    top: 100,
+    bottom: 60,
     left: 20,
     right: 20,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 20,
-    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    borderRadius: radius.xl,
+    padding: 24,
     alignItems: 'center',
+    gap: 12,
   },
-  instructionText: { fontSize: 22, fontWeight: '800', color: '#FFF' },
-  instructionSub: { fontSize: 14, color: '#DDD', textAlign: 'center', marginTop: 8 },
-  tapToContinue: { fontSize: 12, color: colors.primary, marginTop: 12, fontWeight: '700' },
-  gradientContainer: { flex: 1, alignSelf: 'stretch', flexDirection: 'column' },
-  checkerboard: { flex: 1, alignSelf: 'stretch' },
-  movingBall: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primary },
-  btnRow: { position: 'absolute', bottom: 80, flexDirection: 'row', gap: 20, paddingHorizontal: 20 },
-  resBtn: { flex: 1, paddingVertical: 18, borderRadius: 12, alignItems: 'center' },
-  resBtnText: { color: '#FFF', fontWeight: '800', fontSize: 18 },
+  overlayTitle: { fontSize: 20, fontWeight: '800', color: '#FFF', letterSpacing: 1 },
+  overlaySub:   { fontSize: 13, color: '#DDD', textAlign: 'center', lineHeight: 19 },
+  btnRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
+  resBtn: { flex: 1, paddingVertical: 14, borderRadius: radius.md, alignItems: 'center' },
+  resBtnText: { color: '#FFF', fontWeight: '800', fontSize: fontSize.md },
 });

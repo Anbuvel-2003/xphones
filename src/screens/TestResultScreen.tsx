@@ -59,6 +59,10 @@ export default function TestResultScreen({ navigation, route }: Props) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
+      {/* Background Blobs for Glass Effect */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate('Main')}>
           <Text style={styles.homeBtn}>🏠 Home</Text>
@@ -184,6 +188,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
+  blob1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: colors.success + '10',
+    top: '10%',
+    left: -100,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: colors.primary + '08',
+    bottom: '15%',
+    right: -80,
+  },
   homeBtn: { fontSize: fontSize.sm, color: colors.primary, fontWeight: '600' },
   headerTitle: { fontSize: fontSize.md, fontWeight: '700', color: colors.text },
   shareBtn: { fontSize: fontSize.sm, color: colors.primary, fontWeight: '600' },
@@ -193,9 +215,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 15 },
+    shadowOpacity: 0.2,
+    shadowRadius: 25,
+    elevation: 8,
   },
   scoreBadge: {
     width: 120,
@@ -205,6 +232,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
   },
   scoreEmoji: { fontSize: 28 },
   scoreValue: { fontSize: fontSize.xxl, fontWeight: '900' },
@@ -219,18 +250,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: spacing.md,
     width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: radius.md,
+    paddingVertical: 12,
   },
   summaryItem: { flex: 1, alignItems: 'center' },
   summaryValue: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.text },
   summaryLabel: { fontSize: fontSize.xs, color: colors.textSecondary, marginTop: 2 },
-  summaryDivider: { width: 1, backgroundColor: colors.cardBorder, marginVertical: 4 },
+  summaryDivider: { width: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)', marginVertical: 4 },
   section: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.md,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -249,9 +287,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   resultLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 },
   resultIcon: { fontSize: 20 },
@@ -259,7 +297,7 @@ const styles = StyleSheet.create({
   resultValue: { fontSize: fontSize.xs, color: colors.textSecondary, marginTop: 2 },
   actions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
     marginTop: spacing.sm,
   },
   actionBtn: {
@@ -268,11 +306,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
   },
   actionBtnSecondary: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
+    shadowOpacity: 0,
   },
   actionBtnText: {
     fontSize: fontSize.sm,

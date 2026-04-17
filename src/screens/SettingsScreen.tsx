@@ -133,6 +133,11 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      
+      {/* Background Blobs */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
+
       <View style={styles.header}>
         <Text style={styles.title}>⚙️  Settings</Text>
       </View>
@@ -191,6 +196,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
+  blob1: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: colors.primary + '08',
+    top: '20%',
+    left: -80,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: colors.info + '06',
+    bottom: '10%',
+    right: -70,
+  },
   title: {
     fontSize: fontSize.xl,
     fontWeight: '800',
@@ -211,8 +234,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
   },
   row: {
     flexDirection: 'row',
@@ -222,7 +249,7 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   rowLeft: {
     flexDirection: 'row',
@@ -233,7 +260,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radius.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,

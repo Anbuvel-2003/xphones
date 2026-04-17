@@ -90,6 +90,11 @@ export default function TestSelectionScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      
+      {/* Background Blobs */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
+
       <View style={styles.header}>
         <Text style={styles.title}>🔬  Select Tests</Text>
       </View>
@@ -202,6 +207,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
+  blob1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: colors.primary + '12',
+    top: -50,
+    left: -100,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: colors.info + '08',
+    bottom: '15%',
+    right: -80,
+  },
   title: { fontSize: fontSize.xl, fontWeight: '800', color: colors.text },
   scroll: { padding: spacing.md },
   modeRow: {
@@ -215,11 +238,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   modeBtnActive: {
-    backgroundColor: colors.primary + '18',
+    backgroundColor: 'rgba(0, 212, 255, 0.12)',
     borderColor: colors.primary,
   },
   modeBtnText: {
@@ -239,7 +266,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
   },
   fullTestInfoTitle: {
     fontSize: fontSize.lg,
@@ -259,10 +290,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryPill: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: radius.full,
     paddingHorizontal: 12,
     paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   categoryPillText: {
     fontSize: fontSize.xs,
@@ -290,14 +323,18 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   categoryCardSelected: {
     borderColor: colors.primary,
-    backgroundColor: colors.primary + '08',
+    backgroundColor: 'rgba(0, 212, 255, 0.08)',
   },
   categoryCardLeft: {
     flexDirection: 'row',
@@ -308,13 +345,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radius.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   categoryIconSelected: {
-    backgroundColor: colors.primary + '20',
+    backgroundColor: 'rgba(0, 212, 255, 0.15)',
   },
   categoryIconText: { fontSize: 24 },
   categoryName: {
@@ -351,7 +388,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -369,7 +406,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopColor: colors.glassBorder,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: 12,
@@ -380,6 +417,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   footerInfoLabel: {
     fontSize: fontSize.xs,
@@ -396,9 +435,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
   },
   startBtnDisabled: {
     backgroundColor: colors.card,
+    borderColor: colors.glassBorder,
+    borderWidth: 1,
+    shadowOpacity: 0,
   },
   startBtnText: {
     fontSize: fontSize.md,

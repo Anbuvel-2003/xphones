@@ -91,6 +91,11 @@ export default function DeviceInfoScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      
+      {/* Background Blobs */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
+
       <View style={styles.header}>
         <Text style={styles.title}>📱  Device Info</Text>
         <TouchableOpacity style={styles.refreshBtn} onPress={load}>
@@ -143,6 +148,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
+  blob1: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: colors.primary + '10',
+    top: '10%',
+    right: -100,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: colors.info + '08',
+    bottom: '20%',
+    left: -120,
+  },
   title: {
     fontSize: fontSize.xl,
     fontWeight: '800',
@@ -155,6 +178,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   refreshBtnText: {
     fontSize: 20,
@@ -173,11 +198,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
   },
   tabActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   tabText: {
     fontSize: fontSize.sm,
@@ -193,7 +222,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 4,
   },
   section: {},
   sectionTitle: {

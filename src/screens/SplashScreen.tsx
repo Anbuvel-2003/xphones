@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, Animated, StatusBar, TouchableOpacity } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, fontSize } from '../common/theme';
 import { RootStackParamList } from '../common/types';
@@ -47,6 +47,9 @@ export default function SplashScreen({ navigation }: Props) {
         <View style={styles.dot} />
       </Animated.View>
 
+      <TouchableOpacity style={styles.skipBtn} onPress={() => navigation.replace('Main')}>
+        <Text style={styles.skipText}>Skip to Home</Text>
+      </TouchableOpacity>
       <Text style={styles.version}>v1.0.0</Text>
     </View>
   );
@@ -115,6 +118,17 @@ const styles = StyleSheet.create({
   dotActive: {
     backgroundColor: colors.primary,
     width: 18,
+  },
+  skipBtn: {
+    position: 'absolute',
+    bottom: 60,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  skipText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
   },
   version: {
     position: 'absolute',

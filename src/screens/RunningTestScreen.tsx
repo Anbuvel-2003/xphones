@@ -24,7 +24,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RunningTest'>;
 
 export default function RunningTestScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const { selectedCategories } = route.params;
+  const { selectedCategories = 'all' } = route.params;
 
   const [tests] = useState<TestItem[]>(() => getTestsForCategories(selectedCategories));
   const [results, setResults] = useState<TestResult[]>([]);
@@ -32,7 +32,9 @@ export default function RunningTestScreen({ navigation, route }: Props) {
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
   const manualResolveRef = useRef<((pass: boolean) => void) | null>(null);
+  const lastProcessedTestIdRef = useRef<string | null>(null);
   const [manualPrompt, setManualPrompt] = useState<{ test: TestItem } | null>(null);
+  const [manualResult, setManualResult] = useState<boolean | null>(null);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -149,11 +151,16 @@ export default function RunningTestScreen({ navigation, route }: Props) {
       let status: TestStatus = 'pass';
       let value = '';
 
-      if (test.category === 'Display' || test.category === 'Touch') {
+      if (test.category === 'Display' || test.category === 'Touch' || test.category === 'Camera') {
         const passed = await new Promise<boolean>((resolve) => {
           manualResolveRef.current = resolve;
-          const screenName = test.category === 'Display' ? 'DisplayTest' : 'TouchTest';
-          navigation.navigate(screenName, { testId: test.id });
+          if (test.category === 'Display') {
+            navigation.navigate('DisplayTest', { testId: test.id });
+          } else if (test.category === 'Touch') {
+            navigation.navigate('TouchTest', { testId: test.id });
+          } else {
+            navigation.navigate('CameraTest', { testId: test.id });
+          }
         });
         status = passed ? 'pass' : 'fail';
         value = passed ? 'Visual check passed' : 'Issue detected';
@@ -163,6 +170,7 @@ export default function RunningTestScreen({ navigation, route }: Props) {
         status = passed ? 'pass' : 'fail';
         value = passed ? 'User confirmed' : 'User reported issue';
         setManualPrompt(null);
+        setManualResult(null);
         manualResolveRef.current = null;
       } else {
         const result = await runAutoTest(test);
@@ -201,12 +209,12 @@ export default function RunningTestScreen({ navigation, route }: Props) {
   }, [runTests]);
 
   useEffect(() => {
-    if (route.params?.testResult) {
-      const { pass } = route.params.testResult;
-      manualResolveRef.current?.(pass);
-      navigation.setParams({ testResult: undefined } as any);
+    const tr = route.params?.testResult;
+    if (tr && tr.testId !== lastProcessedTestIdRef.current) {
+      lastProcessedTestIdRef.current = tr.testId;
+      manualResolveRef.current?.(tr.pass);
     }
-  }, [route.params?.testResult, navigation]);
+  }, [route.params?.testResult]);
 
   const progress = tests.length > 0 ? (results.length / tests.length) * 100 : 0;
   const currentTest = tests[currentIndex];
@@ -216,6 +224,10 @@ export default function RunningTestScreen({ navigation, route }: Props) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+
+      {/* Background Blobs for Glass Effect */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
 
       {/* Manual Test Prompt */}
       {manualPrompt && (
@@ -227,26 +239,49 @@ export default function RunningTestScreen({ navigation, route }: Props) {
             <Text style={styles.manualInstruction}>
               Perform the test on your device and confirm the result below.
             </Text>
-            <View style={styles.manualBtns}>
-              <TouchableOpacity
-                style={[styles.manualBtn, styles.manualBtnFail]}
-                onPress={() => { manualResolveRef.current?.(false); }}
-              >
-                <Text style={styles.manualBtnText}>❌  FAIL</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.manualBtn, styles.manualBtnPass]}
-                onPress={() => { manualResolveRef.current?.(true); }}
-              >
-                <Text style={styles.manualBtnText}>✅  PASS</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              style={styles.manualSkip}
-              onPress={() => { manualResolveRef.current?.(true); }}
-            >
-              <Text style={styles.manualSkipText}>Skip this test</Text>
-            </TouchableOpacity>
+            {manualResult === null ? (
+              <>
+                <View style={styles.manualBtns}>
+                  <TouchableOpacity
+                    style={[styles.manualBtn, styles.manualBtnFail]}
+                    onPress={() => { setManualResult(false); }}
+                  >
+                    <Text style={styles.manualBtnText}>❌  FAIL</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.manualBtn, styles.manualBtnPass]}
+                    onPress={() => { setManualResult(true); }}
+                  >
+                    <Text style={styles.manualBtnText}>✅  PASS</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={styles.manualSkip}
+                  onPress={() => { setManualResult(true); }}
+                >
+                  <Text style={styles.manualSkipText}>Skip this test</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={styles.manualResultConfirm}>
+                <Text style={[
+                  styles.manualResultText,
+                  { color: manualResult ? colors.success : colors.error },
+                ]}>
+                  {manualResult ? '✅  Test Passed' : '❌  Test Failed'}
+                </Text>
+                <TouchableOpacity
+                  style={styles.manualNextBtn}
+                  onPress={() => {
+                    const result = manualResult;
+                    setManualResult(null);
+                    manualResolveRef.current?.(result);
+                  }}
+                >
+                  <Text style={styles.manualNextBtnText}>Next  ▶</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       )}
@@ -322,6 +357,24 @@ export default function RunningTestScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  blob1: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: colors.primary + '10',
+    top: '15%',
+    right: -100,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: colors.info + '08',
+    bottom: '20%',
+    left: -120,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -352,20 +405,28 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: colors.primary,
     borderTopColor: 'transparent',
     borderRightColor: 'transparent',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
   innerCircle: {
     width: 120,
     height: 120,
     borderRadius: 60,
     backgroundColor: colors.card,
-    borderWidth: 2,
-    borderColor: colors.cardBorder,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
   },
   currentIcon: { fontSize: 44 },
   progressCircleText: {
@@ -376,6 +437,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
   },
   currentInfo: { alignItems: 'center', marginBottom: spacing.xl },
   currentLabel: {
@@ -429,9 +494,9 @@ const styles = StyleSheet.create({
   miniResultRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
     gap: 8,
   },
   miniResultIcon: { fontSize: 14 },
@@ -451,13 +516,18 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   manualCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     borderRadius: radius.xl,
     padding: spacing.xl,
     width: '100%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.primary + '60',
+    borderColor: colors.glassBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+    elevation: 10,
   },
   manualIcon: { fontSize: 56, marginBottom: 12 },
   manualTitle: {
@@ -490,6 +560,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: radius.md,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   manualBtnPass: { backgroundColor: colors.success },
   manualBtnFail: { backgroundColor: colors.error },
@@ -503,5 +577,31 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textMuted,
     textDecorationLine: 'underline',
+  },
+  manualResultConfirm: {
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+  },
+  manualResultText: {
+    fontSize: fontSize.xl,
+    fontWeight: '800',
+    marginBottom: 20,
+  },
+  manualNextBtn: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+  },
+  manualNextBtnText: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: colors.background,
   },
 });

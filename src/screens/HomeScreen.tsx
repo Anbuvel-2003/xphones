@@ -70,6 +70,11 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Background Blobs for Glass Effect */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
+      <View style={styles.blob3} />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -235,6 +240,33 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
   },
   scanBtnText: { fontSize: 18 },
+  blob1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: colors.primary + '15',
+    top: -100,
+    right: -100,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: colors.info + '10',
+    bottom: '10%',
+    left: -150,
+  },
+  blob3: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#FF00FF08',
+    top: '30%',
+    right: -50,
+  },
   scroll: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
@@ -244,9 +276,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.primary + '40',
+    borderColor: colors.glassBorder,
     marginBottom: spacing.md,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 5,
   },
   deviceCardTop: {
     flexDirection: 'row',
@@ -267,7 +304,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   deviceBadge: {
-    backgroundColor: colors.primaryDark + '30',
+    backgroundColor: 'rgba(0, 212, 255, 0.15)',
     borderRadius: radius.full,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -308,8 +345,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
     gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
   },
   meterRow: {
     flexDirection: 'row',
@@ -340,17 +381,17 @@ const styles = StyleSheet.create({
   },
   quickBtn: {
     width: '30.5%',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     paddingVertical: 18,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.glassBorder,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
   },
   quickBtnIcon: { 
     fontSize: 26,
@@ -368,6 +409,10 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     alignItems: 'center',
     marginTop: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
   },
   fullTestBtnText: {
     fontSize: fontSize.lg,

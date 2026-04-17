@@ -5,7 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  Alert,
+  Vibration,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -14,87 +14,108 @@ import { RootStackParamList } from '../../common/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CameraTest'>;
 
-interface CameraCheck {
+interface CameraCheckDef {
   id: string;
   icon: string;
   name: string;
   desc: string;
-  instruction: string;
+  steps: string[];
 }
 
-const CAMERA_CHECKS: CameraCheck[] = [
+const CAMERA_CHECKS: CameraCheckDef[] = [
   {
-    id: 'rear',
+    id: 'rear_camera',
     icon: '📷',
     name: 'Rear Camera',
-    desc: 'Test the main rear camera',
-    instruction: 'Open the camera app, take a photo with the rear camera, and verify the image quality.',
+    desc: 'Verify main rear camera image quality',
+    steps: [
+      'Open your camera app and ensure it is using the rear camera.',
+      'Take a photo and verify the image is clear and in focus.',
+      'Check there are no green tints, black spots, or blurry patches.',
+    ],
   },
   {
-    id: 'front',
+    id: 'front_camera',
     icon: '🤳',
     name: 'Front Camera',
-    desc: 'Test the selfie / front camera',
-    instruction: 'Switch to the front camera, take a selfie, and verify the image is clear.',
+    desc: 'Verify selfie / front camera image quality',
+    steps: [
+      'Switch to the front (selfie) camera.',
+      'Take a photo and verify the image is clear.',
+      'Check there are no dead pixels or colour cast issues.',
+    ],
   },
   {
     id: 'flash',
     icon: '⚡',
     name: 'Camera Flash',
     desc: 'Test the LED flash / torch',
-    instruction: 'Enable flash mode in the camera app, or turn on the torch (flashlight). Verify the LED turns on.',
+    steps: [
+      'Enable flash mode in the camera app, or turn on the torch.',
+      'Verify the LED turns on and is bright.',
+    ],
   },
   {
     id: 'video',
     icon: '🎥',
     name: 'Video Recording',
     desc: 'Test video capture quality',
-    instruction: 'Record a short video clip and play it back to verify audio and video are working.',
+    steps: [
+      'Switch to video mode and record a short clip.',
+      'Play it back and verify audio and video are in sync.',
+    ],
   },
 ];
 
-export default function CameraTestScreen({ navigation }: Props) {
+export default function CameraTestScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
+  const { testId } = route.params ?? {};
+
+  // If called from RunningTestScreen with a specific testId, show only that check
+  const isFlowMode = Boolean(testId && testId !== 'camera');
+  const checksToShow = isFlowMode
+    ? CAMERA_CHECKS.filter(c => c.id === testId)
+    : CAMERA_CHECKS;
+
   const [results, setResults] = useState<Record<string, 'pass' | 'fail' | null>>({});
 
   const setResult = (id: string, result: 'pass' | 'fail') => {
     setResults(prev => ({ ...prev, [id]: result }));
   };
 
-  const runCheck = (check: CameraCheck) => {
-    Alert.alert(
-      check.name,
-      check.instruction + '\n\nDid the ' + check.name.toLowerCase() + ' work correctly?',
-      [
-        { text: '❌ No (Fail)', style: 'destructive', onPress: () => setResult(check.id, 'fail') },
-        { text: '✅ Yes (Pass)', onPress: () => setResult(check.id, 'pass') },
-      ]
-    );
+  const finishFlow = (pass: boolean) => {
+    Vibration.vibrate(50);
+    navigation.navigate('RunningTest', {
+      testResult: { testId: testId ?? 'camera', pass },
+    });
   };
 
-  const allDone = CAMERA_CHECKS.every(c => results[c.id]);
+  const allDone = checksToShow.every(c => results[c.id]);
   const passCount = Object.values(results).filter(v => v === 'pass').length;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>‹ Back</Text>
-        </TouchableOpacity>
+        {isFlowMode ? (
+          <View style={{ width: 60 }} />
+        ) : (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.back}>‹ Back</Text>
+          </TouchableOpacity>
+        )}
         <Text style={styles.title}>📷  Camera Test</Text>
         <View style={{ width: 60 }} />
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.intro}>
-          Open your camera app to perform each test, then mark each result below.
-        </Text>
-
-        {CAMERA_CHECKS.map(check => {
+        {checksToShow.map(check => {
           const result = results[check.id];
           const borderColor = result === 'pass'
-            ? colors.success : result === 'fail' ? colors.error : colors.cardBorder;
+            ? colors.success
+            : result === 'fail'
+            ? colors.error
+            : colors.cardBorder;
 
           return (
             <View key={check.id} style={[styles.checkCard, { borderColor }]}>
@@ -116,21 +137,21 @@ export default function CameraTestScreen({ navigation }: Props) {
                 )}
               </View>
 
+              <View style={styles.steps}>
+                {check.steps.map((step, i) => (
+                  <Text key={i} style={styles.step}>• {step}</Text>
+                ))}
+              </View>
+
               <View style={styles.checkBtns}>
                 <TouchableOpacity
-                  style={[styles.checkBtn, styles.checkBtnFail, result === 'fail' && styles.checkBtnActive]}
+                  style={[styles.checkBtn, styles.checkBtnFail, result === 'fail' && styles.checkBtnSelected]}
                   onPress={() => setResult(check.id, 'fail')}
                 >
                   <Text style={styles.checkBtnText}>❌ Fail</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.checkBtn, styles.checkBtnInfo]}
-                  onPress={() => runCheck(check)}
-                >
-                  <Text style={[styles.checkBtnText, { color: colors.primary }]}>ℹ️ Instructions</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.checkBtn, styles.checkBtnPass, result === 'pass' && styles.checkBtnActive]}
+                  style={[styles.checkBtn, styles.checkBtnPass, result === 'pass' && styles.checkBtnSelected]}
                   onPress={() => setResult(check.id, 'pass')}
                 >
                   <Text style={styles.checkBtnText}>✅ Pass</Text>
@@ -143,16 +164,23 @@ export default function CameraTestScreen({ navigation }: Props) {
         {allDone && (
           <View style={[
             styles.summaryCard,
-            { borderColor: passCount === CAMERA_CHECKS.length ? colors.success : colors.warning },
+            { borderColor: passCount === checksToShow.length ? colors.success : colors.warning },
           ]}>
             <Text style={styles.summaryText}>
-              {passCount === CAMERA_CHECKS.length
-                ? '🎉 All camera tests passed!'
-                : `⚠️ ${CAMERA_CHECKS.length - passCount} camera issue(s) found`}
+              {passCount === checksToShow.length
+                ? '🎉 Camera test passed!'
+                : `⚠️ ${checksToShow.length - passCount} issue(s) found`}
             </Text>
-            <Text style={styles.summaryScore}>
-              {passCount}/{CAMERA_CHECKS.length} tests passed
-            </Text>
+            {isFlowMode ? (
+              <TouchableOpacity
+                style={[styles.doneBtn, { backgroundColor: passCount === checksToShow.length ? colors.success : colors.error }]}
+                onPress={() => finishFlow(passCount === checksToShow.length)}
+              >
+                <Text style={styles.doneBtnText}>Continue →</Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={styles.summaryScore}>{passCount}/{checksToShow.length} passed</Text>
+            )}
           </View>
         )}
       </View>
@@ -173,45 +201,34 @@ const styles = StyleSheet.create({
   back: { fontSize: fontSize.md, color: colors.primary, fontWeight: '600', width: 60 },
   title: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text },
   body: { flex: 1, padding: spacing.md, gap: 12 },
-  intro: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: 20,
-    backgroundColor: colors.infoBg,
-    borderRadius: radius.md,
-    padding: 12,
-  },
   checkCard: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    gap: 12,
+    gap: 10,
   },
-  checkTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
+  checkTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   checkIcon: { fontSize: 32 },
   checkInfo: { flex: 1 },
   checkName: { fontSize: fontSize.md, fontWeight: '700', color: colors.text },
   checkDesc: { fontSize: fontSize.xs, color: colors.textSecondary, marginTop: 2 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
+  steps: { gap: 4 },
+  step: { fontSize: fontSize.xs, color: colors.textSecondary, lineHeight: 18 },
   checkBtns: { flexDirection: 'row', gap: 8 },
   checkBtn: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: radius.sm,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.cardBorder,
     backgroundColor: colors.surface,
   },
-  checkBtnPass: { borderColor: colors.success + '40' },
-  checkBtnFail: { borderColor: colors.error + '40' },
-  checkBtnInfo: { borderColor: colors.primary + '40' },
-  checkBtnActive: { opacity: 1, borderWidth: 2 },
+  checkBtnPass: { borderColor: colors.success + '60' },
+  checkBtnFail: { borderColor: colors.error + '60' },
+  checkBtnSelected: { borderWidth: 2 },
   checkBtnText: { fontSize: fontSize.xs, fontWeight: '600', color: colors.textSecondary },
   summaryCard: {
     backgroundColor: colors.card,
@@ -219,8 +236,15 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderWidth: 2,
     alignItems: 'center',
-    gap: 4,
+    gap: 10,
   },
   summaryText: { fontSize: fontSize.md, fontWeight: '700', color: colors.text },
   summaryScore: { fontSize: fontSize.sm, color: colors.textSecondary },
+  doneBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  doneBtnText: { fontSize: fontSize.md, fontWeight: '800', color: '#FFF' },
 });
